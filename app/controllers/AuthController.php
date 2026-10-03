@@ -61,17 +61,20 @@ class AuthController extends BaseApiController
         $this->api->rate_limit('login_' . ($_SERVER['REMOTE_ADDR'] ?? 'x'), 10, 60);
 
         $in       = $this->json_input();
-        $email    = strtolower(trim((string) ($in['email'] ?? '')));
+        // Accepts an email or a username in "login" (the old "email" field still works).
+        $login    = trim((string) ($in['login'] ?? $in['email'] ?? ''));
         $password = (string) ($in['password'] ?? '');
 
-        if ($email === '' || $password === '') {
-            $this->fail_validation(['email' => 'Enter your email and password.']);
+        if ($login === '' || $password === '') {
+            $this->fail_validation(['login' => 'Enter your email or username and your password.']);
         }
 
-        $user = $this->UserModel->find_by('email', $email);
+        $user = strpos($login, '@') !== false
+            ? $this->UserModel->find_by('email', strtolower($login))
+            : $this->UserModel->find_by('username', $login);
 
         if (!$user || !(int) $user['is_active'] || !password_verify($password, $user['password'])) {
-            $this->api->respond_error('Email or password is incorrect.', 401);
+            $this->api->respond_error('Email, username or password is incorrect.', 401);
         }
 
         $tokens = $this->api->issue_tokens([
