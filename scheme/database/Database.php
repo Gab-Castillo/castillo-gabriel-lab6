@@ -268,11 +268,29 @@ class Database {
             PDO::ATTR_EMULATE_PREPARES   => false,
         );
 
-        // TLS for hosted MySQL such as Aiven. Set DB_SSL_CA to the CA certificate file path.
-        $ssl_ca = isset($database_config['ssl_ca']) ? trim((string) $database_config['ssl_ca']) : '';
-        if ($driver === 'mysql' && $ssl_ca !== '') {
-            $is_absolute = preg_match('#^([A-Za-z]:[\\\\/]|/)#', $ssl_ca) === 1;
-            $ca_path = $is_absolute ? $ssl_ca : ROOT_DIR . ltrim($ssl_ca, '/\\');
+        // TLS for hosted MySQL such as Aiven.
+        //   DB_SSL_CA        = path to the CA certificate file
+        //   DB_SSL_CA_BASE64 = the same certificate, base64-encoded (for hosts where a file path is awkward)
+        $ssl_ca  = isset($database_config['ssl_ca']) ? trim((string) $database_config['ssl_ca']) : '';
+        $ssl_b64 = isset($database_config['ssl_ca_base64']) ? trim((string) $database_config['ssl_ca_base64']) : '';
+        if ($driver === 'mysql' && ($ssl_ca !== '' || $ssl_b64 !== '')) {
+            if ($ssl_b64 !== '') {
+                $pem = base64_decode($ssl_b64, true);
+                if ($pem === false || strpos($pem, 'BEGIN CERTIFICATE') === false) {
+                    throw new PDOException('DB_SSL_CA_BASE64 is not a valid base64-encoded PEM certificate.');
+                }
+                $ca_path = rtrim(sys_get_temp_dir(), '/\\') . DIRECTORY_SEPARATOR . 'db-ca-' . md5($pem) . '.pem';
+                if (!is_file($ca_path)) {
+                    file_put_contents($ca_path, $pem);
+                    @chmod($ca_path, 0644);
+                }
+            } else {
+                $is_absolute = preg_match('#^([A-Za-z]:[\\\\/]|/)#', $ssl_ca) === 1;
+                $ca_path = $is_absolute ? $ssl_ca : ROOT_DIR . ltrim($ssl_ca, '/\\');
+            }
+            if (!is_file($ca_path) || !is_readable($ca_path)) {
+                throw new PDOException('Database CA certificate not found or not readable at: ' . $ca_path);
+            }
             // PHP 8.5 moved the constants to Pdo\Mysql; PDO::MYSQL_ATTR_* is deprecated there.
             $php85 = class_exists('Pdo\\Mysql', false);
             $options[constant($php85 ? 'Pdo\\Mysql::ATTR_SSL_CA' : 'PDO::MYSQL_ATTR_SSL_CA')] = $ca_path;
