@@ -45,3 +45,29 @@ defined('PREVENT_DIRECT_ACCESS') OR exit('No direct script access allowed');
 /** @var object $router **/
 
 $router->get('/', 'Welcome::index');
+
+// --------------------------------------------------------------------
+// Migration routes (inert unless MIGRATION_ENABLED=true in a local .env)
+// --------------------------------------------------------------------
+$router->get('create-migration/{migration_class}', 'MigrationController::create_migration');
+$router->get('migrate', 'MigrationController::migrate');
+$router->get('rollback', 'MigrationController::rollback');
+$router->get('rollback-all', 'MigrationController::rollback_all');
+$router->get('refresh', 'MigrationController::refresh');
+$router->get('status', 'MigrationController::status');
+
+// --------------------------------------------------------------------
+// JSON API
+// --------------------------------------------------------------------
+// Auth
+$router->post('/api/auth/register', 'AuthController::register');
+$router->post('/api/auth/login', 'AuthController::login');
+$router->post('/api/auth/refresh', 'AuthController::refresh');
+$router->post('/api/auth/logout', 'AuthController::logout');
+
+// Products (JWT required, enforced in ProductController)
+$router->get('/api/products', 'ProductController::index');
+$router->get('/api/products/{id}', 'ProductController::show');
+$router->post('/api/products', 'ProductController::store');
+$router->match('/api/products/{id}', 'ProductController::update', 'PUT|PATCH');
+$router->delete('/api/products/{id}', 'ProductController::destroy');

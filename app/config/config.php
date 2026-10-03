@@ -347,4 +347,16 @@ $config['csrf_token_name']         = 'csrf_test_name';
 $config['csrf_cookie_name']        = 'csrf_cookie_name';
 $config['csrf_expire']             = 7200;
 $config['csrf_regenerate']         = FALSE;
+
+/*
+|--------------------------------------------------------------------------
+| CORS allowed origin(s)
+|--------------------------------------------------------------------------
+| The framework answers browser preflight (OPTIONS) requests before it loads
+| app/config/api.php, so the allowed origin must live here, in the main config.
+| Set ALLOW_ORIGIN to your frontend URL (comma-separated for several).
+| Empty means '*', which is fine for local testing only.
+*/
+$_origins = array_filter(array_map('trim', explode(',', (string) getenv('ALLOW_ORIGIN'))));
+$config['allow_origin'] = $_origins ? (count($_origins) === 1 ? $_origins[0] : array_values($_origins)) : '*';
 ?>

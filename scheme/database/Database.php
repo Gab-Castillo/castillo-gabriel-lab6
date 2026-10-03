@@ -268,6 +268,17 @@ class Database {
             PDO::ATTR_EMULATE_PREPARES   => false,
         );
 
+        // TLS for hosted MySQL such as Aiven. Set DB_SSL_CA to the CA certificate file path.
+        $ssl_ca = isset($database_config['ssl_ca']) ? trim((string) $database_config['ssl_ca']) : '';
+        if ($driver === 'mysql' && $ssl_ca !== '') {
+            $is_absolute = preg_match('#^([A-Za-z]:[\\\\/]|/)#', $ssl_ca) === 1;
+            $ca_path = $is_absolute ? $ssl_ca : ROOT_DIR . ltrim($ssl_ca, '/\\');
+            // PHP 8.5 moved the constants to Pdo\Mysql; PDO::MYSQL_ATTR_* is deprecated there.
+            $php85 = class_exists('Pdo\\Mysql', false);
+            $options[constant($php85 ? 'Pdo\\Mysql::ATTR_SSL_CA' : 'PDO::MYSQL_ATTR_SSL_CA')] = $ca_path;
+            $options[constant($php85 ? 'Pdo\\Mysql::ATTR_SSL_VERIFY_SERVER_CERT' : 'PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT')] = true;
+        }
+
         try {
             $this->db = new PDO($dsn, $username, $password, $options);
             $this->driver = $this->db->getAttribute(PDO::ATTR_DRIVER_NAME);

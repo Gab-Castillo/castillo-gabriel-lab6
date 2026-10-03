@@ -44,7 +44,7 @@ defined('PREVENT_DIRECT_ACCESS') OR exit('No direct script access allowed');
 | below (see their notes). The API library refuses to start otherwise.
 |
 */
-$config['api_helper_enabled'] = FALSE;
+$config['api_helper_enabled'] = TRUE;
 
 /*
 |--------------------------------------------------------------------------
@@ -145,7 +145,8 @@ $config['users_table'] = 'users';
 | a browser, so set your real domain in production.
 |
 */
-$config['allow_origin'] = '*';
+// Allowed origin(s) come from ALLOW_ORIGIN via app/config/config.php (needed there for CORS preflight).
+$config['allow_origin'] = config_item('allow_origin') ?? '*';
 
 /*
 |--------------------------------------------------------------------------
@@ -165,7 +166,7 @@ $config['refresh_token_table'] = 'refresh_tokens';
 | application's name or URL.
 |
 */
-$config['jwt_issuer'] = 'your-app';
+$config['jwt_issuer'] = 'castillo-lab6-api';
 
 /*
 |--------------------------------------------------------------------------
@@ -176,7 +177,7 @@ $config['jwt_issuer'] = 'your-app';
 |
 */
 
-$config['jwt_audience'] = 'your-app-clients';
+$config['jwt_audience'] = 'castillo-lab6-web';
 
 /*
 |--------------------------------------------------------------------------
