@@ -1,5 +1,5 @@
 <?php
-defined('PREVENT_DIRECT_ACCESS') or exit('No direct script access allowed');
+defined('PREVENT_DIRECT_ACCESS') OR exit('No direct script access allowed');
 
 require_once __DIR__ . '/BaseApiController.php';
 
@@ -65,10 +65,7 @@ class AuthController extends BaseApiController
         $login = '';
         foreach (['login', 'email', 'username', 'identifier'] as $field) {
             $value = trim((string) ($in[$field] ?? ''));
-            if ($value !== '') {
-                $login = $value;
-                break;
-            }
+            if ($value !== '') { $login = $value; break; }
         }
         $password = (string) ($in['password'] ?? '');
 
@@ -89,10 +86,17 @@ class AuthController extends BaseApiController
             'role' => $user['role'],
         ]);
 
-        $this->ok([
-            'user'   => ['id' => (int) $user['id'], 'username' => $user['username'], 'email' => $user['email']],
-            'tokens' => $tokens,
-        ], 'Logged in');
+        $user_out = ['id' => (int) $user['id'], 'username' => $user['username'], 'email' => $user['email']];
+
+        // "data" is what the StokPile app reads. "user" and "tokens" are repeated at the top level
+        // because the framework's own refresh response uses that shape (and generic API testers expect it).
+        $this->api->respond([
+            'status'  => 200,
+            'message' => 'Logged in',
+            'data'    => ['user' => $user_out, 'tokens' => $tokens],
+            'user'    => $user_out,
+            'tokens'  => $tokens,
+        ], 200);
     }
 
     /** POST /api/auth/refresh  (the library responds with the new token pair) */
