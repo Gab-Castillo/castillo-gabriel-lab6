@@ -1,5 +1,5 @@
 <?php
-defined('PREVENT_DIRECT_ACCESS') OR exit('No direct script access allowed');
+defined('PREVENT_DIRECT_ACCESS') or exit('No direct script access allowed');
 
 require_once __DIR__ . '/BaseApiController.php';
 
@@ -61,8 +61,15 @@ class AuthController extends BaseApiController
         $this->api->rate_limit('login_' . ($_SERVER['REMOTE_ADDR'] ?? 'x'), 10, 60);
 
         $in       = $this->json_input();
-        // Accepts an email or a username in "login" (the old "email" field still works).
-        $login    = trim((string) ($in['login'] ?? $in['email'] ?? ''));
+        // Accepts an email or a username in "login", "email", "username" or "identifier" (first one that is filled in).
+        $login = '';
+        foreach (['login', 'email', 'username', 'identifier'] as $field) {
+            $value = trim((string) ($in[$field] ?? ''));
+            if ($value !== '') {
+                $login = $value;
+                break;
+            }
+        }
         $password = (string) ($in['password'] ?? '');
 
         if ($login === '' || $password === '') {
